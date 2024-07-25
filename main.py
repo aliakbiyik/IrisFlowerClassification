@@ -14,7 +14,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sb
 from sklearn.preprocessing import LabelEncoder, StandardScaler
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, GridSearchCV, cross_val_score
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
@@ -24,6 +24,7 @@ iris=pd.read_csv('Iris.csv')
 #İlk 5 değeri görüntüleme
 print(iris.head())
 
+#Veri seti hakkında özet bilgi
 print(iris.describe())
 
 #Eksik verileri kontrol etme
@@ -76,8 +77,10 @@ print("Test seti boyutu:", x_test.shape)
 # KNN Modelini oluşturma
 k=5 #K değerini belirleme(komşu sayısı)
 knn=KNeighborsClassifier(n_neighbors=k)
+
 # Modeli eğitim verisi ile eğitme
 knn.fit(x_train,y_train)
+
 # Test verileri üzerinde tahminler yapma
 y_pred = knn.predict(x_test)
 
@@ -85,3 +88,27 @@ y_pred = knn.predict(x_test)
 print("KNN Accuracy:", accuracy_score(y_test, y_pred))
 print("KNN Classification Report:\n", classification_report(y_test, y_pred))
 print("KNN Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
+
+
+#GridSearchCV kullanarak en iyi k değerini bulma
+knn = KNeighborsClassifier()
+param_grid={'n_neighbors':range(1,31)}
+grid_search=GridSearchCV(knn, param_grid, cv=5, scoring='accuracy')
+grid_search.fit(x_train,y_train)
+best_k = grid_search.best_params_['n_neighbors']
+print(f"En iyi k değeri: {best_k}")
+
+#En iyi k değeri ile modeli tekrar eğitme
+best_knn = KNeighborsClassifier(n_neighbors=best_k)
+best_knn.fit(x_train, y_train)
+y_pred = best_knn.predict(x_test)
+
+#Modelin performansını değerlendirme
+print("En iyi KNN Accuracy:", accuracy_score(y_test, y_pred))
+print("En iyi KNN Classification Report:\n", classification_report(y_test, y_pred))
+print("En iyi KNN Confusion Matrix:\n", confusion_matrix(y_test, y_pred))
+
+#Çapraz Doğrulama ile modelin performansını değerlendirme
+cv_scores = cross_val_score(best_knn, x, y, cv=5, scoring='accuracy')
+print("Çapraz Doğrulama Doğruluk Skorları:", cv_scores)
+print("Çapraz Doğrulama Ortalama Doğruluk Skoru:", cv_scores.mean())
